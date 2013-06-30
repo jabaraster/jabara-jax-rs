@@ -3,6 +3,8 @@
  */
 package jabara.jax_rs;
 
+import jabara.general.IoUtil;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,11 +21,11 @@ import javax.ws.rs.ext.Provider;
 import net.arnx.jsonic.JSON;
 
 /**
- * 
+ * @param <T>
  * @author jabaraster
  */
 @Provider
-public class JsonMessageBodyReaderWriter implements MessageBodyReader<Object>, MessageBodyWriter<Object> {
+public class JsonMessageBodyReaderWriter<T> implements MessageBodyReader<T>, MessageBodyWriter<T> {
 
     /**
      * @see javax.ws.rs.ext.MessageBodyWriter#getSize(java.lang.Object, java.lang.Class, java.lang.reflect.Type, java.lang.annotation.Annotation[],
@@ -31,7 +33,7 @@ public class JsonMessageBodyReaderWriter implements MessageBodyReader<Object>, M
      */
     @SuppressWarnings("unused")
     @Override
-    public long getSize(final Object pT, final Class<?> pType, final Type pGenericType, final Annotation[] pAnnotations, final MediaType pMediaType) {
+    public long getSize(final T pT, final Class<?> pType, final Type pGenericType, final Annotation[] pAnnotations, final MediaType pMediaType) {
         return -1;
     }
 
@@ -59,16 +61,20 @@ public class JsonMessageBodyReaderWriter implements MessageBodyReader<Object>, M
      * @see javax.ws.rs.ext.MessageBodyReader#readFrom(java.lang.Class, java.lang.reflect.Type, java.lang.annotation.Annotation[],
      *      javax.ws.rs.core.MediaType, javax.ws.rs.core.MultivaluedMap, java.io.InputStream)
      */
-    @SuppressWarnings("unused")
+    @SuppressWarnings({ "unused", "unchecked" })
     @Override
-    public Object readFrom( //
-            final Class<Object> pT //
+    public T readFrom( //
+            final Class<T> pT //
             , final Type pType //
             , final Annotation[] pAnnotations //
             , final MediaType pMediaType //
             , final MultivaluedMap<String, String> pHttpHeaders //
             , final InputStream pEntityStream //
     ) throws IOException, WebApplicationException {
+
+        if (String.class.equals(pT)) {
+            return (T) IoUtil.toString(pEntityStream, IoUtil.UTF_8);
+        }
         return JSON.decode(pEntityStream, pT);
     }
 
@@ -79,7 +85,7 @@ public class JsonMessageBodyReaderWriter implements MessageBodyReader<Object>, M
     @SuppressWarnings("unused")
     @Override
     public void writeTo( //
-            final Object pT //
+            final T pT //
             , final Class<?> pType //
             , final Type pGenericType //
             , final Annotation[] pAnnotations //
@@ -88,6 +94,6 @@ public class JsonMessageBodyReaderWriter implements MessageBodyReader<Object>, M
             , final OutputStream pEntityStream //
     ) throws IOException, WebApplicationException {
 
-        JSON.encode(pT, pEntityStream, true);
+        JSON.encode(pT, pEntityStream, false);
     }
 }
